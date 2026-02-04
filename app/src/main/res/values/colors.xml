@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="primary">#6366F1</color>
+    <color name="primary_variant">#4F46E5</color>
+    <color name="primary_dark">#3730A3</color>
+    <color name="on_primary">#FFFFFF</color>
+    
+    <!-- Secondary Colors -->
+    <color name="secondary">#10B981</color>
+    <color name="secondary_variant">#059669</color>
+    <color name="on_secondary">#FFFFFF</color>
+    
+    <!-- Background Colors -->
+    <color name="background">#0F172A</color>
+    <color name="surface">#1E293B</color>
+    <color name="surface_variant">#334155</color>
+    <color name="on_background">#F1F5F9</color>
+    <color name="on_surface">#E2E8F0</color>
+    
+    <!-- Status Colors -->
+    <color name="success">#22C55E</color>
+    <color name="warning">#F59E0B</color>
+    <color name="error">#EF4444</color>
+    
+    <!-- Overlay Colors -->
+    <color name="nav_button_bg">#1E293B</color>
+    <color name="nav_button_pressed">#334155</color>
+    <color name="panel_bg">#1E293BF0</color>
+    <color name="panel_border">#475569</color>
+    
+    <!-- Action Button Colors -->
+    <color name="action_volume">#8B5CF6</color>
+    <color name="action_recent">#06B6D4</color>
+    <color name="action_power">#EF4444</color>
+    <color name="action_lock">#F59E0B</color>
+    <color name="action_brightness">#FBBF24</color>
+    <color name="action_screenshot">#10B981</color>
+</resources>

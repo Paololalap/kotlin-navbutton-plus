@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NavButton+</string>
+    <string name="accessibility_service_description">This service adds a custom navigation button that provides quick access to system actions like volume control, recent apps, power menu, and more.</string>
+    
+    <!-- Main Activity -->
+    <string name="welcome_title">NavButton+</string>
+    <string name="welcome_subtitle">Add an extra navigation button for quick actions</string>
+    
+    <!-- Permission Status -->
+    <string name="accessibility_permission">Accessibility Service</string>
+    <string name="overlay_permission">Overlay Permission</string>
+    <string name="write_settings_permission">Write Settings</string>
+    <string name="status_enabled">Enabled</string>
+    <string name="status_disabled">Tap to enable</string>
+    
+    <!-- Buttons -->
+    <string name="btn_enable_accessibility">Enable Accessibility Service</string>
+    <string name="btn_enable_overlay">Grant Overlay Permission</string>
+    <string name="btn_enable_settings">Grant Settings Permission</string>
+    <string name="btn_start_service">Start Service</string>
+    <string name="btn_stop_service">Stop Service</string>
+    
+    <!-- Action Panel -->
+    <string name="action_volume_up">Volume Up</string>
+    <string name="action_volume_down">Volume Down</string>
+    <string name="action_recent_apps">Recent Apps</string>
+    <string name="action_power_menu">Power Menu</string>
+    <string name="action_lock_screen">Lock Screen</string>
+    <string name="action_brightness_up">Brightness Up</string>
+    <string name="action_brightness_down">Brightness Down</string>
+    <string name="action_screenshot">Screenshot</string>
+    
+    <!-- Instructions -->
+    <string name="instruction_title">Setup Instructions</string>
+    <string name="instruction_step1">1. Enable Accessibility Service</string>
+    <string name="instruction_step2">2. Grant Overlay Permission</string>
+    <string name="instruction_step3">3. Grant Write Settings Permission (for brightness)</string>
+    <string name="instruction_step4">4. The navigation button will appear on the right side</string>
+</resources>
