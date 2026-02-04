@@ -6,7 +6,7 @@ A lightweight Android application that adds a custom floating navigation button 
 
 ✅ **Custom Navigation Button** - Appears on the right side of your screen  
 ✅ **Draggable** - Move the button anywhere on screen  
-✅ **8 Quick Actions**:
+✅ **9 Quick Actions**:
 
 - Volume Up / Down
 - Recent Apps
@@ -14,6 +14,7 @@ A lightweight Android application that adds a custom floating navigation button 
 - Lock Screen
 - Brightness Up / Down
 - Screenshot
+- Settings
 
 ✅ **Portrait & Landscape Support**  
 ✅ **Material Design UI**  
@@ -146,28 +147,6 @@ After installing the app:
    - Brightness adjusts screen brightness
    - Screenshot captures screen
 
-## Accessibility Service Actions
-
-| Action         | API Used                                  |
-| -------------- | ----------------------------------------- |
-| Volume Up/Down | `AudioManager.adjustVolume()`             |
-| Recent Apps    | `GLOBAL_ACTION_RECENTS`                   |
-| Power Menu     | `GLOBAL_ACTION_POWER_DIALOG` (API 21+)    |
-| Lock Screen    | `GLOBAL_ACTION_LOCK_SCREEN` (API 28+)     |
-| Screenshot     | `GLOBAL_ACTION_TAKE_SCREENSHOT` (API 28+) |
-| Brightness     | `Settings.System.SCREEN_BRIGHTNESS`       |
-
-## API Requirements
-
-| Feature      | Minimum API          |
-| ------------ | -------------------- |
-| Base App     | API 24 (Android 7.0) |
-| Power Dialog | API 21 (Android 5.0) |
-| Lock Screen  | API 28 (Android 9.0) |
-| Screenshot   | API 28 (Android 9.0) |
-
-## Troubleshooting
-
 ### Button Not Appearing
 
 - Check if Accessibility Service is enabled
@@ -185,13 +164,6 @@ After installing the app:
 - Disable battery optimization for the app
 - Lock the app in recent apps
 - Check manufacturer-specific settings
-
-## Build Variants
-
-| Variant | Package Name                            | Features            |
-| ------- | --------------------------------------- | ------------------- |
-| Debug   | `com.accessibilitymenu.navbutton.debug` | Logging enabled     |
-| Release | `com.accessibilitymenu.navbutton`       | Minified, optimized |
 
 ## License
 
