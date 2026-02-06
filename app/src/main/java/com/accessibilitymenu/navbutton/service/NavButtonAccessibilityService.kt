@@ -11,6 +11,8 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -34,6 +36,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
 
     private lateinit var windowManager: WindowManager
     private lateinit var audioManager: AudioManager
+    private lateinit var vibrator: Vibrator
     
     private var navButtonView: View? = null
     private var actionPanelView: View? = null
@@ -71,6 +74,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
         
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         
         if (Settings.canDrawOverlays(this)) {
             createNavButton()
@@ -182,6 +186,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
 
             private val internalLongPressRunnable = Runnable {
                 wasLongPress = true
+                vibrate()
                 resetNavButtonPosition(showToast = true)
             }
 
@@ -238,6 +243,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
                         handler.removeCallbacks(internalLongPressRunnable)
                         
                         if (isClick && !wasLongPress) {
+                            vibrate()
                             toggleActionPanel()
                         } else if (!isClick && !wasLongPress) {
                             snapToEdge()
@@ -376,44 +382,52 @@ class NavButtonAccessibilityService : AccessibilityService() {
         actionPanelView?.apply {
             // Volume Up - Keep panel open
             findViewById<View>(R.id.btnVolumeUp)?.setOnClickListener {
+                vibrate()
                 performVolumeAction(AudioManager.ADJUST_RAISE)
             }
             
             // Volume Down - Keep panel open
             findViewById<View>(R.id.btnVolumeDown)?.setOnClickListener {
+                vibrate()
                 performVolumeAction(AudioManager.ADJUST_LOWER)
             }
             
             // Recent Apps
             findViewById<View>(R.id.btnRecentApps)?.setOnClickListener {
+                vibrate()
                 performGlobalAction(GLOBAL_ACTION_RECENTS)
                 hideActionPanel()
             }
             
             // Power Menu
             findViewById<View>(R.id.btnPowerMenu)?.setOnClickListener {
+                vibrate()
                 performPowerAction()
                 hideActionPanel()
             }
             
             // Lock Screen
             findViewById<View>(R.id.btnLockScreen)?.setOnClickListener {
+                vibrate()
                 performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
                 hideActionPanel()
             }
             
             // Brightness Up - Keep panel open
             findViewById<View>(R.id.btnBrightnessUp)?.setOnClickListener {
+                vibrate()
                 adjustBrightness(true)
             }
             
             // Brightness Down - Keep panel open
             findViewById<View>(R.id.btnBrightnessDown)?.setOnClickListener {
+                vibrate()
                 adjustBrightness(false)
             }
             
             // Screenshot
             findViewById<View>(R.id.btnScreenshot)?.setOnClickListener {
+                vibrate()
                 hideActionPanel()
                 handler.postDelayed({
                     takeScreenshot()
@@ -422,6 +436,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
 
             // Settings
             findViewById<View>(R.id.btnSettings)?.setOnClickListener {
+                vibrate()
                 openSettings()
                 hideActionPanel()
             }
@@ -500,6 +515,15 @@ class NavButtonAccessibilityService : AccessibilityService() {
             performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
         } else {
             Toast.makeText(this, "Screenshot not supported on this Android version", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun vibrate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(50)
         }
     }
 
