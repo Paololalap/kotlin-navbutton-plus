@@ -396,11 +396,14 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 performVolumeAction(AudioManager.ADJUST_LOWER)
             }
             
-            // Recent Apps
+            // Recent Apps - Switch to Previous App
             findViewById<View>(R.id.btnRecentApps)?.setOnClickListener {
                 vibrate()
-                performGlobalAction(GLOBAL_ACTION_RECENTS)
                 hideActionPanel()
+                performGlobalAction(GLOBAL_ACTION_RECENTS)
+                handler.postDelayed({
+                    performGlobalAction(GLOBAL_ACTION_RECENTS)
+                }, 300)
             }
             
             // Power Menu
