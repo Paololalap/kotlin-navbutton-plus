@@ -1,11 +1,13 @@
 package com.accessibilitymenu.navbutton.service
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
 import android.content.Context
 import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.graphics.Path
 import android.graphics.PixelFormat
 import android.media.AudioManager
 import android.os.Build
@@ -55,6 +57,9 @@ class NavButtonAccessibilityService : AccessibilityService() {
     private var navButtonParams: WindowManager.LayoutParams? = null
     
     private val longPressDelay = 300L // milliseconds for long press
+    
+    // State for recent apps flow: true = first press, false = subsequent presses
+    private var isFirstRecentPress = true
 
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -396,14 +401,11 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 performVolumeAction(AudioManager.ADJUST_LOWER)
             }
             
-            // Recent Apps - Switch to Previous App
+            // Recent Apps - Switch to Previous App with stateful flow
             findViewById<View>(R.id.btnRecentApps)?.setOnClickListener {
                 vibrate()
                 hideActionPanel()
-                performGlobalAction(GLOBAL_ACTION_RECENTS)
-                handler.postDelayed({
-                    performGlobalAction(GLOBAL_ACTION_RECENTS)
-                }, 300)
+                handleRecentAppsAction()
             }
             
             // Power Menu
@@ -420,9 +422,10 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 hideActionPanel()
             }
             
-            // Home - Open org.fossify.home
+            // Home - Open org.fossify.home and reset recent apps flow
             findViewById<View>(R.id.btnHome)?.setOnClickListener {
                 vibrate()
+                isFirstRecentPress = true // Reset the recent apps flow
                 launchHomeApp()
                 hideActionPanel()
             }
@@ -539,6 +542,68 @@ class NavButtonAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Error launching Home app", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun handleRecentAppsAction() {
+        if (isFirstRecentPress) {
+            // First press: Open recents, swipe left-to-right, wait, then tap center
+            isFirstRecentPress = false
+            performGlobalAction(GLOBAL_ACTION_RECENTS)
+            
+            // Wait for recents to open, then perform swipe and tap
+            handler.postDelayed({
+                performSwipeLeftToRight()
+                
+                // Wait 300ms after swipe, then tap center
+                handler.postDelayed({
+                    performTapCenter()
+                }, 300)
+            }, 500) // Wait for recents UI to fully appear
+        } else {
+            // Subsequent presses: Normal alt-tab behavior
+            performGlobalAction(GLOBAL_ACTION_RECENTS)
+            handler.postDelayed({
+                performGlobalAction(GLOBAL_ACTION_RECENTS)
+            }, 300)
+        }
+    }
+
+    private fun performSwipeLeftToRight() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+            
+            // Start at 15% from left, end at 85% (70% swipe distance)
+            val startX = screenWidth * 0.15f
+            val endX = screenWidth * 0.85f
+            val y = screenHeight / 2f // Middle of screen vertically
+            
+            val path = Path()
+            path.moveTo(startX, y)
+            path.lineTo(endX, y)
+            
+            val gestureBuilder = GestureDescription.Builder()
+            gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, 300))
+            
+            dispatchGesture(gestureBuilder.build(), null, null)
+        }
+    }
+
+    private fun performTapCenter() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val displayMetrics = resources.displayMetrics
+            val centerX = displayMetrics.widthPixels / 2f
+            val centerY = displayMetrics.heightPixels / 2f
+            
+            val path = Path()
+            path.moveTo(centerX, centerY)
+            
+            val gestureBuilder = GestureDescription.Builder()
+            gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, 50))
+            
+            dispatchGesture(gestureBuilder.build(), null, null)
         }
     }
 
