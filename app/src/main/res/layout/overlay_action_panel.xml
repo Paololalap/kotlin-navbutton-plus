@@ -23,7 +23,7 @@
             android:orientation="horizontal">
 
             <LinearLayout
-                android:id="@+id/btnBrightnessDown"
+                android:id="@+id/btnBlackout"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -38,14 +38,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🌙"
+                    android:text="🌑"
                     android:textSize="24sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Bright-"
+                    android:text="Black out"
                     android:textColor="@color/on_surface"
                     android:textSize="12sp" />
             </LinearLayout>

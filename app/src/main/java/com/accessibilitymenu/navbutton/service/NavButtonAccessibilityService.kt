@@ -21,6 +21,9 @@ import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
+import android.graphics.Color
+import android.view.GestureDetector
+import android.widget.ImageView
 import com.accessibilitymenu.navbutton.R
 
 class NavButtonAccessibilityService : AccessibilityService() {
@@ -41,6 +44,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
     private var navButtonView: View? = null
     private var actionPanelView: View? = null
     
+    private var blackoutView: View? = null
     private var isPanelVisible = false
     
     private val handler = Handler(Looper.getMainLooper())
@@ -419,10 +423,10 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 adjustBrightness(true)
             }
             
-            // Brightness Down - Keep panel open
-            findViewById<View>(R.id.btnBrightnessDown)?.setOnClickListener {
+            // Blackout Button
+            findViewById<View>(R.id.btnBlackout)?.setOnClickListener {
                 vibrate()
-                adjustBrightness(false)
+                startBlackout()
             }
             
             // Screenshot
@@ -529,6 +533,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
 
     private fun destroyOverlays() {
         hideActionPanel()
+        stopBlackout()
         
         navButtonView?.let {
             try {
@@ -538,5 +543,91 @@ class NavButtonAccessibilityService : AccessibilityService() {
             }
             navButtonView = null
         }
+    }
+    private fun startBlackout() {
+        if (blackoutView != null) return
+
+        hideActionPanel()
+        
+        // Remove nav button temporarily so we can add it back on TOP of blackout
+        navButtonView?.let { view ->
+            try {
+                windowManager.removeView(view)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        blackoutView = View(this).apply {
+            setBackgroundColor(Color.BLACK)
+        }
+
+        val params = createWindowLayoutParams()
+        params.width = WindowManager.LayoutParams.MATCH_PARENT
+        params.height = WindowManager.LayoutParams.MATCH_PARENT
+        
+        // Ensure we cover the status bar and notch areas
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        // Force full screen layout
+        params.flags = params.flags or WindowManager.LayoutParams.FLAG_FULLSCREEN or 
+                       WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                       WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+
+        // Apply system UI visibility flags to hide bars
+        blackoutView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+        
+        // Double tap logic
+        val gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                stopBlackout()
+                return true
+            }
+        })
+        
+        blackoutView?.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            true
+        }
+
+        try {
+            windowManager.addView(blackoutView, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
+        // Add nav button back on top
+        navButtonView?.let { view ->
+            try {
+                if (navButtonParams != null) {
+                    windowManager.addView(view, navButtonParams)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            
+            // Set icon to BLACK
+            view.findViewById<ImageView>(R.id.navButtonIcon)?.setColorFilter(Color.BLACK)
+        }
+    }
+
+    private fun stopBlackout() {
+        if (blackoutView == null) return
+        
+        try {
+            windowManager.removeView(blackoutView)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        blackoutView = null
+        
+        // Reset nav button icon
+        navButtonView?.findViewById<ImageView>(R.id.navButtonIcon)?.clearColorFilter()
     }
 }
