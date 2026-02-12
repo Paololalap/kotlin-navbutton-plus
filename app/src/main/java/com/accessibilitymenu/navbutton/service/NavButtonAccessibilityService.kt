@@ -6,9 +6,11 @@ import android.content.Context
 import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.drawable.Drawable
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
@@ -16,16 +18,20 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import android.graphics.Color
 import android.view.GestureDetector
-import android.widget.ImageView
 import com.accessibilitymenu.navbutton.R
 
 class NavButtonAccessibilityService : AccessibilityService() {
@@ -58,8 +64,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
     
     private val longPressDelay = 300L // milliseconds for long press
     
-    // State for recent apps flow: true = first press, false = subsequent presses
-    private var isFirstRecentPress = true
+    // Track recently opened apps (package names, most recent first)
+    private val recentPackages = mutableListOf<String>()
 
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -100,7 +106,21 @@ class NavButtonAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Not needed for this implementation
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val pkg = event.packageName?.toString() ?: return
+            // Ignore our own package, system UI, home launcher, and keyboard
+            if (pkg == packageName || pkg == "com.android.systemui" || pkg == "org.fossify.home" || pkg == "com.google.android.inputmethod.latin") return
+            // Only track launchable apps
+            val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+            if (launchIntent != null) {
+                recentPackages.remove(pkg)
+                recentPackages.add(0, pkg)
+                // Keep list capped at 20 entries
+                if (recentPackages.size > 20) {
+                    recentPackages.removeAt(recentPackages.lastIndex)
+                }
+            }
+        }
     }
 
     override fun onInterrupt() {
@@ -401,11 +421,10 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 performVolumeAction(AudioManager.ADJUST_LOWER)
             }
             
-            // Recent Apps - Switch to Previous App with stateful flow
+            // Recent Apps - Show last 9 opened apps in a grid
             findViewById<View>(R.id.btnRecentApps)?.setOnClickListener {
                 vibrate()
-                hideActionPanel()
-                handleRecentAppsAction()
+                showRecentApps()
             }
             
             // Power Menu
@@ -422,10 +441,9 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 hideActionPanel()
             }
             
-            // Home - Open org.fossify.home and reset recent apps flow
+            // Home - Open org.fossify.home
             findViewById<View>(R.id.btnHome)?.setOnClickListener {
                 vibrate()
-                isFirstRecentPress = true // Reset the recent apps flow
                 launchHomeApp()
                 hideActionPanel()
             }
@@ -452,6 +470,12 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 hideActionPanel()
             }
             
+            // Back button from recent apps to quick actions
+            findViewById<View>(R.id.btnBackToActions)?.setOnClickListener {
+                vibrate()
+                switchToQuickActions()
+            }
+            
             // Dismiss panel when clicked outside (on the transparent root)
             findViewById<View>(R.id.panelRoot)?.setOnClickListener {
                 hideActionPanel()
@@ -459,6 +483,11 @@ class NavButtonAccessibilityService : AccessibilityService() {
             
             // Prevent clicks inside the panel content from closing it
             findViewById<View>(R.id.panelContainer)?.setOnClickListener {
+                // Consume click
+            }
+            
+            // Prevent clicks inside the recent apps container from closing panel
+            findViewById<View>(R.id.recentAppsContainer)?.setOnClickListener {
                 // Consume click
             }
         }
@@ -545,66 +574,118 @@ class NavButtonAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun handleRecentAppsAction() {
-        if (isFirstRecentPress) {
-            // First press: Open recents, swipe left-to-right, wait, then tap center
-            isFirstRecentPress = false
-            performGlobalAction(GLOBAL_ACTION_RECENTS)
-            
-            // Wait for recents to open, then perform swipe and tap
-            handler.postDelayed({
-                performSwipeLeftToRight()
+    private fun showRecentApps() {
+        val panel = actionPanelView ?: return
+        val panelContainer = panel.findViewById<View>(R.id.panelContainer) ?: return
+        val recentAppsContainer = panel.findViewById<View>(R.id.recentAppsContainer) ?: return
+        val grid = panel.findViewById<GridLayout>(R.id.recentAppsGrid) ?: return
+        
+        // Clear previous grid content
+        grid.removeAllViews()
+        
+        // Get up to 9 recent packages
+        val appsToShow = recentPackages.take(9)
+        
+        if (appsToShow.isEmpty()) {
+            Toast.makeText(this, "No recent apps yet", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        val pm = packageManager
+        val displayMetrics = resources.displayMetrics
+        // Calculate cell width: (screen width - padding) / 3
+        val cellWidth = (displayMetrics.widthPixels - TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 48f, displayMetrics).toInt()) / 3
+        
+        for ((index, pkg) in appsToShow.withIndex()) {
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                val appLabel = pm.getApplicationLabel(appInfo).toString()
+                val appIcon: Drawable = pm.getApplicationIcon(appInfo)
                 
-                // Wait 300ms after swipe, then tap center
-                handler.postDelayed({
-                    performTapCenter()
-                }, 300)
-            }, 500) // Wait for recents UI to fully appear
-        } else {
-            // Subsequent presses: Normal alt-tab behavior
-            performGlobalAction(GLOBAL_ACTION_RECENTS)
-            handler.postDelayed({
-                performGlobalAction(GLOBAL_ACTION_RECENTS)
-            }, 300)
+                // Create a cell: vertical LinearLayout with icon + label
+                val cell = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    val cellPaddingPx = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 8f, displayMetrics).toInt()
+                    setPadding(cellPaddingPx, cellPaddingPx, cellPaddingPx, cellPaddingPx)
+                    isClickable = true
+                    isFocusable = true
+                    
+                    // Ripple/background from the action button style
+                    setBackgroundResource(R.drawable.action_button_background)
+                }
+                
+                // Icon
+                val iconSize = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, 40f, displayMetrics).toInt()
+                val iconView = ImageView(this).apply {
+                    setImageDrawable(appIcon)
+                    layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
+                }
+                cell.addView(iconView)
+                
+                // Label
+                val labelView = TextView(this).apply {
+                    text = appLabel
+                    textSize = 11f
+                    setTextColor(resources.getColor(R.color.on_surface, null))
+                    gravity = Gravity.CENTER
+                    maxLines = 1
+                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    val topMarginPx = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 4f, displayMetrics).toInt()
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = topMarginPx }
+                }
+                cell.addView(labelView)
+                
+                // Click to launch
+                cell.setOnClickListener {
+                    vibrate()
+                    hideActionPanel()
+                    val launchIntent = pm.getLaunchIntentForPackage(pkg)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(launchIntent)
+                    }
+                }
+                
+                // GridLayout params
+                val row = index / 3
+                val col = index % 3
+                val gridParams = GridLayout.LayoutParams().apply {
+                    rowSpec = GridLayout.spec(row)
+                    columnSpec = GridLayout.spec(col, 1f)
+                    width = 0
+                    height = GridLayout.LayoutParams.WRAP_CONTENT
+                    val marginPx = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 4f, displayMetrics).toInt()
+                    setMargins(marginPx, marginPx, marginPx, marginPx)
+                }
+                
+                grid.addView(cell, gridParams)
+            } catch (e: Exception) {
+                // App may have been uninstalled; skip it
+                e.printStackTrace()
+            }
         }
+        
+        // Switch visibility: hide quick actions, show recent apps
+        panelContainer.visibility = View.GONE
+        recentAppsContainer.visibility = View.VISIBLE
     }
-
-    private fun performSwipeLeftToRight() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val displayMetrics = resources.displayMetrics
-            val screenWidth = displayMetrics.widthPixels
-            val screenHeight = displayMetrics.heightPixels
-            
-            // Start at 15% from left, end at 85% (70% swipe distance)
-            val startX = screenWidth * 0.15f
-            val endX = screenWidth * 0.85f
-            val y = screenHeight / 2f // Middle of screen vertically
-            
-            val path = Path()
-            path.moveTo(startX, y)
-            path.lineTo(endX, y)
-            
-            val gestureBuilder = GestureDescription.Builder()
-            gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, 300))
-            
-            dispatchGesture(gestureBuilder.build(), null, null)
-        }
-    }
-
-    private fun performTapCenter() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val displayMetrics = resources.displayMetrics
-            val centerX = displayMetrics.widthPixels / 2f
-            val centerY = displayMetrics.heightPixels / 2f
-            
-            val path = Path()
-            path.moveTo(centerX, centerY)
-            
-            val gestureBuilder = GestureDescription.Builder()
-            gestureBuilder.addStroke(GestureDescription.StrokeDescription(path, 0, 50))
-            
-            dispatchGesture(gestureBuilder.build(), null, null)
-        }
+    
+    private fun switchToQuickActions() {
+        val panel = actionPanelView ?: return
+        val panelContainer = panel.findViewById<View>(R.id.panelContainer) ?: return
+        val recentAppsContainer = panel.findViewById<View>(R.id.recentAppsContainer) ?: return
+        
+        recentAppsContainer.visibility = View.GONE
+        panelContainer.visibility = View.VISIBLE
     }
 
     private fun takeScreenshot() {
