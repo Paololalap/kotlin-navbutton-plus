@@ -445,7 +445,6 @@ class NavButtonAccessibilityService : AccessibilityService() {
             findViewById<View>(R.id.btnHome)?.setOnClickListener {
                 vibrate()
                 launchHomeApp()
-                hideActionPanel()
             }
             
             // Blackout Button
