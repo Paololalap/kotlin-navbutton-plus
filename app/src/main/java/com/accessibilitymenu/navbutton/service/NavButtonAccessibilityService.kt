@@ -72,7 +72,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
             when (intent?.action) {
                 Intent.ACTION_SCREEN_OFF -> {
                     navButtonView?.visibility = View.GONE
-                    hideActionPanel()
+                    hideActionPanel(false)
                 }
                 Intent.ACTION_USER_PRESENT -> {
                     navButtonView?.visibility = View.VISIBLE
@@ -392,7 +392,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun hideActionPanel() {
+    private fun hideActionPanel(shouldVibrate: Boolean = true) {
+        if (shouldVibrate) vibrate()
         actionPanelView?.let {
             try {
                 windowManager.removeView(it)
@@ -429,14 +430,12 @@ class NavButtonAccessibilityService : AccessibilityService() {
             
             // Power Menu
             findViewById<View>(R.id.btnPowerMenu)?.setOnClickListener {
-                vibrate()
                 performPowerAction()
                 hideActionPanel()
             }
             
             // Lock Screen
             findViewById<View>(R.id.btnLockScreen)?.setOnClickListener {
-                vibrate()
                 performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
                 hideActionPanel()
             }
@@ -449,13 +448,11 @@ class NavButtonAccessibilityService : AccessibilityService() {
             
             // Blackout Button
             findViewById<View>(R.id.btnBlackout)?.setOnClickListener {
-                vibrate()
                 startBlackout()
             }
             
             // Screenshot
             findViewById<View>(R.id.btnScreenshot)?.setOnClickListener {
-                vibrate()
                 hideActionPanel()
                 handler.postDelayed({
                     takeScreenshot()
@@ -464,7 +461,6 @@ class NavButtonAccessibilityService : AccessibilityService() {
 
             // Settings
             findViewById<View>(R.id.btnSettings)?.setOnClickListener {
-                vibrate()
                 openSettings()
                 hideActionPanel()
             }
@@ -644,7 +640,6 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 
                 // Click to launch
                 cell.setOnClickListener {
-                    vibrate()
                     hideActionPanel()
                     val launchIntent = pm.getLaunchIntentForPackage(pkg)
                     if (launchIntent != null) {
@@ -705,8 +700,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
     }
 
     private fun destroyOverlays() {
-        hideActionPanel()
-        stopBlackout()
+        hideActionPanel(false)
+        stopBlackout(false)
         
         navButtonView?.let {
             try {
@@ -790,7 +785,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun stopBlackout() {
+    private fun stopBlackout(shouldVibrate: Boolean = true) {
+        if (shouldVibrate) vibrate()
         if (blackoutView == null) return
         
         try {
