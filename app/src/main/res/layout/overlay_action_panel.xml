@@ -303,55 +303,7 @@
         android:padding="12dp"
         android:visibility="gone">
 
-        <!-- Back button row -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="start|center_vertical"
-            android:paddingBottom="8dp">
 
-            <LinearLayout
-                android:id="@+id/btnBackToActions"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:padding="4dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="◀"
-                    android:textSize="18sp"
-                    android:textColor="@color/on_surface" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:text="Back"
-                    android:textColor="@color/on_surface"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Recent Apps"
-                android:textColor="@color/on_surface"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <!-- Spacer to balance the back button -->
-            <View
-                android:layout_width="60dp"
-                android:layout_height="1dp" />
-        </LinearLayout>
 
         <!-- 3x3 Grid of recent apps -->
         <GridLayout

@@ -465,11 +465,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 hideActionPanel()
             }
             
-            // Back button from recent apps to quick actions
-            findViewById<View>(R.id.btnBackToActions)?.setOnClickListener {
-                vibrate()
-                switchToQuickActions()
-            }
+
             
             // Dismiss panel when clicked outside (on the transparent root)
             findViewById<View>(R.id.panelRoot)?.setOnClickListener {
@@ -602,19 +598,23 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 val cell = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
                     gravity = Gravity.CENTER
-                    val cellPaddingPx = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP, 8f, displayMetrics).toInt()
-                    setPadding(cellPaddingPx, cellPaddingPx, cellPaddingPx, cellPaddingPx)
+                    
+                    // Match the 100dp height of quick action buttons
+                    val heightPx = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 100f, displayMetrics).toInt()
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        heightPx
+                    )
+                    
                     isClickable = true
                     isFocusable = true
-                    
-                    // Ripple/background from the action button style
                     setBackgroundResource(R.drawable.action_button_background)
                 }
                 
-                // Icon
+                // Icon - Size updated to 32dp (approx match for 24sp emoji)
                 val iconSize = TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_DIP, 40f, displayMetrics).toInt()
+                    TypedValue.COMPLEX_UNIT_DIP, 32f, displayMetrics).toInt()
                 val iconView = ImageView(this).apply {
                     setImageDrawable(appIcon)
                     layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
@@ -624,7 +624,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 // Label
                 val labelView = TextView(this).apply {
                     text = appLabel
-                    textSize = 11f
+                    textSize = 12f // Match quick action text size
                     setTextColor(resources.getColor(R.color.on_surface, null))
                     gravity = Gravity.CENTER
                     maxLines = 1
@@ -655,7 +655,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
                     rowSpec = GridLayout.spec(row)
                     columnSpec = GridLayout.spec(col, 1f)
                     width = 0
-                    height = GridLayout.LayoutParams.WRAP_CONTENT
+                    height = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 92f, displayMetrics).toInt()
                     val marginPx = TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP, 4f, displayMetrics).toInt()
                     setMargins(marginPx, marginPx, marginPx, marginPx)
@@ -673,14 +674,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
         recentAppsContainer.visibility = View.VISIBLE
     }
     
-    private fun switchToQuickActions() {
-        val panel = actionPanelView ?: return
-        val panelContainer = panel.findViewById<View>(R.id.panelContainer) ?: return
-        val recentAppsContainer = panel.findViewById<View>(R.id.recentAppsContainer) ?: return
-        
-        recentAppsContainer.visibility = View.GONE
-        panelContainer.visibility = View.VISIBLE
-    }
+
 
     private fun takeScreenshot() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
