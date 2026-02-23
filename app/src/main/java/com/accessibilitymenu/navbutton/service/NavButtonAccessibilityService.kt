@@ -364,21 +364,27 @@ class NavButtonAccessibilityService : AccessibilityService() {
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             val displayMetrics = resources.displayMetrics
             val screenWidth = displayMetrics.widthPixels
+            val sidebarWidth = (screenWidth * 0.4).toInt()
             
-            val container = actionPanelView?.findViewById<View>(R.id.panelContainer)
-            val containerParams = container?.layoutParams as? android.widget.FrameLayout.LayoutParams
-            
-            containerParams?.let {
-                // Landscape: Side panel, 40% width, 100% height, Left side
-                it.width = (screenWidth * 0.4).toInt()
-                it.height = android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-                it.gravity = Gravity.START
-                it.leftMargin = 20
-                it.bottomMargin = 0
-                container.layoutParams = it
-                
-                // Vertically center the buttons inside the full-height sidebar
-                (container as? android.widget.LinearLayout)?.gravity = Gravity.CENTER_VERTICAL
+            val containers = listOfNotNull(
+                actionPanelView?.findViewById<View>(R.id.panelContainer),
+                actionPanelView?.findViewById<View>(R.id.recentAppsContainer)
+            )
+
+            for (container in containers) {
+                val containerParams = container.layoutParams as? android.widget.FrameLayout.LayoutParams
+                containerParams?.let {
+                    // Landscape: Side panel, 40% width, 100% height, Left side
+                    it.width = sidebarWidth
+                    it.height = android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                    it.gravity = Gravity.START
+                    it.leftMargin = 20
+                    it.bottomMargin = 0
+                    container.layoutParams = it
+                    
+                    // Vertically center the content inside the full-height sidebar
+                    (container as? android.widget.LinearLayout)?.gravity = Gravity.CENTER_VERTICAL
+                }
             }
         }
         
@@ -584,9 +590,6 @@ class NavButtonAccessibilityService : AccessibilityService() {
         
         val pm = packageManager
         val displayMetrics = resources.displayMetrics
-        // Calculate cell width: (screen width - padding) / 3
-        val cellWidth = (displayMetrics.widthPixels - TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, 48f, displayMetrics).toInt()) / 3
         
         for ((index, pkg) in appsToShow.withIndex()) {
             try {
