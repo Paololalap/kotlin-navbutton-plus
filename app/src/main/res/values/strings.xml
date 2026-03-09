@@ -30,6 +30,19 @@
     <string name="action_brightness_up">Brightness Up</string>
     <string name="action_brightness_down">Brightness Down</string>
     <string name="action_screenshot">Screenshot</string>
+    <string name="action_flashlight">Flashlight</string>
+    <string name="action_flashlight_auto_off">Auto-Off</string>
+    <string name="flashlight_on">Flashlight ON</string>
+    <string name="flashlight_off">Flashlight OFF</string>
+    <string name="flashlight_timer_set">Auto-off in %1$d min</string>
+    <string name="flashlight_timer_cancelled">Auto-off timer cancelled</string>
+    <string name="flashlight_auto_off_triggered">Flashlight auto-off</string>
+    <string name="flashlight_not_available">Flashlight not available</string>
+    <string name="flashlight_timer_title">Auto-Off Timer</string>
+    <string name="flashlight_timer_off">No Timer</string>
+    <string name="flashlight_timer_5">5 minutes</string>
+    <string name="flashlight_timer_15">15 minutes</string>
+    <string name="flashlight_timer_30">30 minutes</string>
     
     <!-- Instructions -->
     <string name="instruction_title">Setup Instructions</string>

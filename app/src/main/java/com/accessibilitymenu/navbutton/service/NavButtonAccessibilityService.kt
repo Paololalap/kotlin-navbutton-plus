@@ -11,8 +11,11 @@ import android.content.res.Configuration
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
+import android.hardware.camera2.CameraAccessException
+import android.hardware.camera2.CameraManager
 import android.media.AudioManager
 import android.os.Build
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -31,6 +34,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.view.GestureDetector
 import com.accessibilitymenu.navbutton.R
 
@@ -66,6 +70,15 @@ class NavButtonAccessibilityService : AccessibilityService() {
     
     // Track recently opened apps (package names, most recent first)
     private val recentPackages = mutableListOf<String>()
+    
+    // Flashlight state
+    var isFlashlightOn = false
+        private set
+    private var flashlightAutoOffTimer: CountDownTimer? = null
+    var currentTimerMinutes = 0 // 0 = no timer
+        private set
+    private lateinit var cameraManager: CameraManager
+    private var cameraId: String? = null
 
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -90,6 +103,12 @@ class NavButtonAccessibilityService : AccessibilityService() {
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        try {
+            cameraId = cameraManager.cameraIdList.firstOrNull()
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+        }
         
         if (Settings.canDrawOverlays(this)) {
             createNavButton()
@@ -145,6 +164,12 @@ class NavButtonAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        // Turn off flashlight and cancel timer on service destroy
+        if (isFlashlightOn) {
+            toggleFlashlight()
+        }
+        flashlightAutoOffTimer?.cancel()
+        flashlightAutoOffTimer = null
         destroyOverlays()
         instance = null
         isRunning = false
@@ -715,6 +740,77 @@ class NavButtonAccessibilityService : AccessibilityService() {
             navButtonView = null
         }
     }
+
+    // ===== Flashlight =====
+
+    // Callback for when flashlight state changes (used by MainActivity)
+    var onFlashlightStateChanged: (() -> Unit)? = null
+
+    fun toggleFlashlight() {
+        val camId = cameraId
+        if (camId == null) {
+            Toast.makeText(this, getString(R.string.flashlight_not_available), Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            isFlashlightOn = !isFlashlightOn
+            cameraManager.setTorchMode(camId, isFlashlightOn)
+            if (!isFlashlightOn) {
+                // Cancel any running auto-off timer when manually turning off
+                flashlightAutoOffTimer?.cancel()
+                flashlightAutoOffTimer = null
+                currentTimerMinutes = 0
+            }
+            onFlashlightStateChanged?.invoke()
+        } catch (e: CameraAccessException) {
+            e.printStackTrace()
+            isFlashlightOn = false
+            Toast.makeText(this, getString(R.string.flashlight_not_available), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun setFlashlightAutoOffTimer(minutes: Int) {
+        // Cancel any existing timer
+        flashlightAutoOffTimer?.cancel()
+        flashlightAutoOffTimer = null
+        currentTimerMinutes = minutes
+
+        if (minutes == 0) {
+            onFlashlightStateChanged?.invoke()
+            return
+        }
+
+        // If flashlight is not on yet, turn it on
+        if (!isFlashlightOn) {
+            toggleFlashlight()
+        }
+
+        val durationMs = minutes * 60 * 1000L
+        flashlightAutoOffTimer = object : CountDownTimer(durationMs, 1000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                // Could update UI here if desired
+            }
+
+            override fun onFinish() {
+                if (isFlashlightOn) {
+                    toggleFlashlight()
+                    handler.post {
+                        Toast.makeText(
+                            this@NavButtonAccessibilityService,
+                            getString(R.string.flashlight_auto_off_triggered),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                currentTimerMinutes = 0
+                flashlightAutoOffTimer = null
+                onFlashlightStateChanged?.invoke()
+            }
+        }.start()
+
+        onFlashlightStateChanged?.invoke()
+    }
+
     private fun startBlackout() {
         if (blackoutView != null) return
 
