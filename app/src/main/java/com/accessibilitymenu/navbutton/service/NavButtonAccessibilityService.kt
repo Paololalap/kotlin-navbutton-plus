@@ -62,7 +62,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
     private var initialY = 0
     private var navButtonParams: WindowManager.LayoutParams? = null
     
-    private val longPressDelay = 300L // milliseconds for long press
+    private val holdToMoveDelay = 500L // milliseconds to hold before drag is allowed
     
     // Track recently opened apps (package names, most recent first)
     private val recentPackages = mutableListOf<String>()
@@ -206,17 +206,18 @@ class NavButtonAccessibilityService : AccessibilityService() {
     private fun setupNavButtonTouchListener() {
         navButtonView?.setOnTouchListener(object : View.OnTouchListener {
             private var isClick = true
-            private var wasLongPress = false
+            private var isDragEnabled = false
             private val clickThreshold = 10
             private var downX = 0f
             private var downY = 0f
             private var initialParamX = 0
             private var initialParamY = 0
 
-            private val internalLongPressRunnable = Runnable {
-                wasLongPress = true
+            private val holdToMoveRunnable = Runnable {
+                // Hold threshold reached — enable dragging and vibrate
+                isDragEnabled = true
+                isClick = false
                 vibrate()
-                resetNavButtonPosition(showToast = true)
             }
 
             override fun onTouch(v: View?, event: MotionEvent?): Boolean {
@@ -229,24 +230,26 @@ class NavButtonAccessibilityService : AccessibilityService() {
                         initialParamX = params.x
                         initialParamY = params.y
                         isClick = true
-                        wasLongPress = false
+                        isDragEnabled = false
                         
-                        // Start long press timer
-                        handler.postDelayed(internalLongPressRunnable, longPressDelay)
+                        // Start hold-to-move timer
+                        handler.postDelayed(holdToMoveRunnable, holdToMoveDelay)
                         return true
                     }
                     MotionEvent.ACTION_MOVE -> {
                         val deltaX = event.rawX - downX
                         val deltaY = event.rawY - downY
                         
-                        if (Math.abs(deltaX) > clickThreshold || Math.abs(deltaY) > clickThreshold) {
-                            if (isClick) {
-                                isClick = false
-                                // Movement detected, cancel long press reset
-                                handler.removeCallbacks(internalLongPressRunnable)
-                            }
-                            
-                            // Update position relative to gravity
+                        val movedPastThreshold = Math.abs(deltaX) > clickThreshold || Math.abs(deltaY) > clickThreshold
+                        
+                        if (movedPastThreshold && !isDragEnabled) {
+                            // Finger moved before hold threshold — cancel hold timer, not a click
+                            isClick = false
+                            handler.removeCallbacks(holdToMoveRunnable)
+                        }
+                        
+                        if (isDragEnabled && movedPastThreshold) {
+                            // Drag mode active — move the button
                             if (params.gravity and Gravity.BOTTOM == Gravity.BOTTOM) {
                                 params.y = initialParamY - deltaY.toInt()
                             } else {
@@ -268,15 +271,18 @@ class NavButtonAccessibilityService : AccessibilityService() {
                         return true
                     }
                     MotionEvent.ACTION_UP -> {
-                        // Cancel long press timer
-                        handler.removeCallbacks(internalLongPressRunnable)
+                        // Cancel hold timer
+                        handler.removeCallbacks(holdToMoveRunnable)
                         
-                        if (isClick && !wasLongPress) {
+                        if (isClick) {
+                            // Quick tap — toggle action panel
                             vibrate()
                             toggleActionPanel()
-                        } else if (!isClick && !wasLongPress) {
+                        } else if (isDragEnabled) {
+                            // Was dragging — snap to nearest edge
                             snapToEdge()
                         }
+                        // else: finger moved before hold threshold — do nothing
                         return true
                     }
                 }
@@ -448,7 +454,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
             
             // Home - Open org.fossify.home
             findViewById<View>(R.id.btnHome)?.setOnClickListener {
-                vibrate()
+                vibrate()   
                 launchHomeApp()
             }
             
