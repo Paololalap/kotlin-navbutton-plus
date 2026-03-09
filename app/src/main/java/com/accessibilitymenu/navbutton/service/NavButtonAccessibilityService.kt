@@ -497,8 +497,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
     }
 
     private fun openSettings() {
-        val intent = android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        val intent = Intent(this, com.accessibilitymenu.navbutton.MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(intent)
     }
 
