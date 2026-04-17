@@ -498,8 +498,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
 
             // Settings
             findViewById<View>(R.id.btnSettings)?.setOnClickListener {
+                vibrate()
                 openSettings()
-                hideActionPanel()
             }
             
 
