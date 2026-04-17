@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.content.res.Configuration
 import android.graphics.Path
 import android.graphics.PixelFormat
@@ -590,42 +591,56 @@ class NavButtonAccessibilityService : AccessibilityService() {
         // Clear previous grid content
         grid.removeAllViews()
         
-        // Get up to 9 recent packages
-        val appsToShow = recentPackages.take(9)
-        
-        if (appsToShow.isEmpty()) {
-            Toast.makeText(this, "No recent apps yet", Toast.LENGTH_SHORT).show()
-            return
-        }
-        
         val pm = packageManager
         val displayMetrics = resources.displayMetrics
         
-        for ((index, pkg) in appsToShow.withIndex()) {
+        // Get all launchable apps
+        val mainIntent = Intent(Intent.ACTION_MAIN, null)
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+        val allLaunchableApps = pm.queryIntentActivities(mainIntent, 0)
+        
+        // Map package name to its ResolveInfo for deduplication and quick lookup
+        val pkgToApp = mutableMapOf<String, ResolveInfo>()
+        for (app in allLaunchableApps) {
+            val pkg = app.activityInfo.packageName
+            if (!pkgToApp.containsKey(pkg)) {
+                pkgToApp[pkg] = app
+            }
+        }
+        
+        // Sorting logic: Recently used first, then the rest alphabetically
+        val recentlyUsed = recentPackages.mapNotNull { pkgToApp[it] }
+        val recentlyUsedPackages = recentlyUsed.map { it.activityInfo.packageName }.toSet()
+        
+        val others = allLaunchableApps
+            .filter { it.activityInfo.packageName !in recentlyUsedPackages }
+            .distinctBy { it.activityInfo.packageName }
+            .sortedBy { it.loadLabel(pm).toString().lowercase() }
+            
+        val appsToShow = (recentlyUsed + others)
+        
+        if (appsToShow.isEmpty()) {
+            Toast.makeText(this, "No apps found", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        for ((index, app) in appsToShow.withIndex()) {
             try {
-                val appInfo = pm.getApplicationInfo(pkg, 0)
-                val appLabel = pm.getApplicationLabel(appInfo).toString()
-                val appIcon: Drawable = pm.getApplicationIcon(appInfo)
+                val pkg = app.activityInfo.packageName
+                val appLabel = app.loadLabel(pm).toString()
+                val appIcon: Drawable = app.loadIcon(pm)
                 
                 // Create a cell: vertical LinearLayout with icon + label
                 val cell = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
                     gravity = Gravity.CENTER
                     
-                    // Match the 100dp height of quick action buttons
-                    val heightPx = TypedValue.applyDimension(
-                        TypedValue.COMPLEX_UNIT_DIP, 100f, displayMetrics).toInt()
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        heightPx
-                    )
-                    
                     isClickable = true
                     isFocusable = true
                     setBackgroundResource(R.drawable.action_button_background)
                 }
                 
-                // Icon - Size updated to 32dp (approx match for 24sp emoji)
+                // Icon - Matches quick action style
                 val iconSize = TypedValue.applyDimension(
                     TypedValue.COMPLEX_UNIT_DIP, 32f, displayMetrics).toInt()
                 val iconView = ImageView(this).apply {
@@ -637,7 +652,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 // Label
                 val labelView = TextView(this).apply {
                     text = appLabel
-                    textSize = 12f // Match quick action text size
+                    textSize = 12f
                     setTextColor(resources.getColor(R.color.on_surface, null))
                     gravity = Gravity.CENTER
                     maxLines = 1
@@ -653,11 +668,24 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 
                 // Click to launch
                 cell.setOnClickListener {
-                    hideActionPanel()
                     val launchIntent = pm.getLaunchIntentForPackage(pkg)
                     if (launchIntent != null) {
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivity(launchIntent)
+                        // Standard launcher flags to ensure fresh start if needed
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or 
+                                     Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                        try {
+                            startActivity(launchIntent)
+                            vibrate()
+                            // Small delay before hiding panel to ensure transition starts correctly
+                            handler.postDelayed({ hideActionPanel(false) }, 100)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Fallback if launch fails
+                            hideActionPanel()
+                        }
+                    } else {
+                        Toast.makeText(this@NavButtonAccessibilityService, 
+                                     "Cannot launch app", Toast.LENGTH_SHORT).show()
                     }
                 }
                 
@@ -677,12 +705,14 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 
                 grid.addView(cell, gridParams)
             } catch (e: Exception) {
-                // App may have been uninstalled; skip it
                 e.printStackTrace()
             }
         }
         
-        // Switch visibility: hide quick actions, show recent apps
+        // Reset scroll position to top when showing
+        panel.findViewById<android.widget.ScrollView>(R.id.recentAppsScrollView)?.scrollTo(0, 0)
+        
+        // Switch visibility: hide quick actions, show apps grid
         panelContainer.visibility = View.GONE
         recentAppsContainer.visibility = View.VISIBLE
     }

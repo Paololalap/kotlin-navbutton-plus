@@ -305,14 +305,20 @@
 
 
 
-        <!-- 3x3 Grid of recent apps -->
-        <GridLayout
-            android:id="@+id/recentAppsGrid"
+        <ScrollView
+            android:id="@+id/recentAppsScrollView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="3"
-            android:rowCount="3"
-            android:useDefaultMargins="true" />
+            android:layout_height="312dp"
+            android:scrollbars="none">
+
+            <!-- Grid of apps -->
+            <GridLayout
+                android:id="@+id/recentAppsGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="3"
+                android:useDefaultMargins="true" />
+        </ScrollView>
 
     </LinearLayout>
 
