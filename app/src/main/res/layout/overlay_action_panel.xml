@@ -308,7 +308,7 @@
         <ScrollView
             android:id="@+id/recentAppsScrollView"
             android:layout_width="match_parent"
-            android:layout_height="312dp"
+            android:layout_height="300dp"
             android:scrollbars="none">
 
             <!-- Grid of apps -->
@@ -317,7 +317,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:columnCount="3"
-                android:useDefaultMargins="true" />
+                android:useDefaultMargins="false" />
         </ScrollView>
 
     </LinearLayout>
