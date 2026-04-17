@@ -477,10 +477,11 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 hideActionPanel()
             }
             
-            // Home - Open org.fossify.home
+            // Home - System Home 
             findViewById<View>(R.id.btnHome)?.setOnClickListener {
-                vibrate()   
-                launchHomeApp()
+                vibrate()
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                hideActionPanel()
             }
             
             // Blackout Button
@@ -578,29 +579,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun launchHomeApp() {
-        try {
-            val packageName = "org.fossify.home"
-            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-            if (launchIntent != null) {
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivity(launchIntent)
-            } else {
-                Toast.makeText(this, "Home app not installed", Toast.LENGTH_SHORT).show()
-                // Optional: Open Play Store for this package
-                 try {
-                    val marketIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$packageName"))
-                    marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(marketIntent)
-                } catch (e: Exception) {
-                    // Play Store might not be installed or other error
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(this, "Error launching Home app", Toast.LENGTH_SHORT).show()
-        }
-    }
+
 
     private fun showRecentApps() {
         val panel = actionPanelView ?: return
