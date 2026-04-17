@@ -268,8 +268,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
                         val movedPastThreshold = Math.abs(deltaX) > clickThreshold || Math.abs(deltaY) > clickThreshold
                         
                         if (movedPastThreshold && !isDragEnabled) {
-                            // Finger moved before hold threshold — cancel hold timer, not a click
-                            isClick = false
+                            // Finger moved before hold threshold — cancel hold timer, but keep it as a click
+                            // so that sensitive screens registering swipes can still trigger the click
                             handler.removeCallbacks(holdToMoveRunnable)
                         }
                         
