@@ -409,8 +409,8 @@ class NavButtonAccessibilityService : AccessibilityService() {
                     // Landscape: Side panel, 40% width, 100% height, Left side
                     it.width = sidebarWidth
                     it.height = android.widget.FrameLayout.LayoutParams.MATCH_PARENT
-                    it.gravity = Gravity.START
-                    it.leftMargin = 20
+                    it.gravity = Gravity.END
+                    it.rightMargin = 150
                     it.bottomMargin = 0
                     container.layoutParams = it
                     
