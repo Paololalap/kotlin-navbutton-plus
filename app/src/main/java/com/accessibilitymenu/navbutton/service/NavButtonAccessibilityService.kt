@@ -666,27 +666,32 @@ class NavButtonAccessibilityService : AccessibilityService() {
                 }
                 cell.addView(labelView)
                 
-                // Click to launch
+                // Store activity info for the click handler
+                val activityPkg = app.activityInfo.packageName
+                val activityName = app.activityInfo.name
+                
+                // Click to launch using PendingIntent to bypass BAL restrictions
                 cell.setOnClickListener {
-                    val launchIntent = pm.getLaunchIntentForPackage(pkg)
-                    if (launchIntent != null) {
-                        // Standard launcher flags to ensure fresh start if needed
-                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or 
-                                     Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-                        try {
-                            startActivity(launchIntent)
-                            vibrate()
-                            // Small delay before hiding panel to ensure transition starts correctly
-                            handler.postDelayed({ hideActionPanel(false) }, 100)
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            // Fallback if launch fails
-                            hideActionPanel()
+                    vibrate()
+                    try {
+                        val launchIntent = Intent(Intent.ACTION_MAIN).apply {
+                            addCategory(Intent.CATEGORY_LAUNCHER)
+                            component = android.content.ComponentName(activityPkg, activityName)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
-                    } else {
-                        Toast.makeText(this@NavButtonAccessibilityService, 
-                                     "Cannot launch app", Toast.LENGTH_SHORT).show()
+                        val pendingIntent = android.app.PendingIntent.getActivity(
+                            this@NavButtonAccessibilityService,
+                            index,
+                            launchIntent,
+                            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                        )
+                        pendingIntent.send()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        Toast.makeText(this@NavButtonAccessibilityService,
+                            "Failed: $activityPkg", Toast.LENGTH_LONG).show()
                     }
+                    hideActionPanel(false)
                 }
                 
                 // GridLayout params
