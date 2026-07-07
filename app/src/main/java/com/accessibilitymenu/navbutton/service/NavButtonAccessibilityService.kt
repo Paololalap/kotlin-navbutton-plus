@@ -1,7 +1,6 @@
 package com.accessibilitymenu.navbutton.service
 
 import android.accessibilityservice.AccessibilityService
-import android.accessibilityservice.GestureDescription
 import android.content.Context
 import android.content.BroadcastReceiver
 import android.content.Intent
@@ -9,7 +8,6 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.content.res.Configuration
-import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.hardware.camera2.CameraAccessException
@@ -541,44 +539,7 @@ class NavButtonAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun adjustBrightness(increase: Boolean) {
-        try {
-            if (!Settings.System.canWrite(this)) {
-                Toast.makeText(this, "Write settings permission required", Toast.LENGTH_SHORT).show()
-                return
-            }
-
-            Settings.System.putInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
-            )
-
-            val currentBrightness = Settings.System.getInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                128
-            )
-
-            val step = 25
-            val newBrightness = if (increase) {
-                (currentBrightness + step).coerceAtMost(255)
-            } else {
-                (currentBrightness - step).coerceAtLeast(0)
-            }
-
-            Settings.System.putInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                newBrightness
-            )
-            
-            Toast.makeText(this, "Brightness: ${(newBrightness * 100 / 255)}%", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Failed to adjust brightness", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
-        }
-    }
+    
 
 
 

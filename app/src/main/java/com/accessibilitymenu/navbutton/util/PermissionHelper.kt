@@ -1,6 +1,5 @@
 package com.accessibilitymenu.navbutton.util
 
-import android.accessibilityservice.AccessibilityService
 import android.content.ComponentName
 import android.content.Context
 import android.provider.Settings
@@ -31,12 +30,5 @@ object PermissionHelper {
         }
 
         return false
-    }
-
-    /**
-     * Check if the accessibility service is currently running
-     */
-    fun isServiceRunning(): Boolean {
-        return NavButtonAccessibilityService.isRunning
     }
 }

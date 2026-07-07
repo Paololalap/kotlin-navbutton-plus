@@ -5,9 +5,6 @@
 # Keep accessibility service
 -keep class com.accessibilitymenu.navbutton.service.NavButtonAccessibilityService { *; }
 
-# Keep boot receiver
--keep class com.accessibilitymenu.navbutton.receiver.BootReceiver { *; }
-
 # Keep R classes
 -keepclassmembers class **.R$* {
     public static <fields>;

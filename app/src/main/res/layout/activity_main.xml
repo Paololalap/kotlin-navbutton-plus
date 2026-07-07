@@ -145,50 +145,6 @@
                 android:background="@drawable/nav_button_background" />
         </LinearLayout>
 
-        <!-- Write Settings Permission Card -->
-        <LinearLayout
-            android:id="@+id/settingsCard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:background="@drawable/permission_card_background"
-            android:clickable="true"
-            android:focusable="true"
-            android:orientation="horizontal"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/write_settings_permission"
-                    android:textColor="@color/on_surface"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/settingsStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="@string/status_disabled"
-                    android:textColor="@color/warning"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <View
-                android:id="@+id/settingsIndicator"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_gravity="center"
-                android:background="@drawable/nav_button_background" />
-        </LinearLayout>
-
         <!-- Flashlight Control Card -->
         <TextView
             android:layout_width="wrap_content"
@@ -282,14 +238,6 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp"
             android:text="@string/instruction_step3"
-            android:textColor="@color/on_surface"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:text="@string/instruction_step4"
             android:textColor="@color/on_surface"
             android:textSize="14sp" />
 

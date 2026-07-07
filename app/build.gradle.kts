@@ -14,7 +14,6 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -42,10 +41,6 @@ android {
         jvmTarget = "17"
     }
 
-    buildFeatures {
-        viewBinding = true
-    }
-
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -60,14 +55,5 @@ dependencies {
     // Material Design
     implementation("com.google.android.material:material:1.11.0")
     
-    // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    
-    // ConstraintLayout
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-
-    // Testing
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    // ponytail: lifecycle-runtime-ktx, constraintlayout, test deps removed — unused
 }

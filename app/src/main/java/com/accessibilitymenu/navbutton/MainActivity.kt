@@ -22,15 +22,12 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var accessibilityCard: LinearLayout
     private lateinit var overlayCard: LinearLayout
-    private lateinit var settingsCard: LinearLayout
     
     private lateinit var accessibilityStatus: TextView
     private lateinit var overlayStatus: TextView
-    private lateinit var settingsStatus: TextView
     
     private lateinit var accessibilityIndicator: View
     private lateinit var overlayIndicator: View
-    private lateinit var settingsIndicator: View
     
     private lateinit var serviceStatus: TextView
 
@@ -91,15 +88,12 @@ class MainActivity : AppCompatActivity() {
     private fun initViews() {
         accessibilityCard = findViewById(R.id.accessibilityCard)
         overlayCard = findViewById(R.id.overlayCard)
-        settingsCard = findViewById(R.id.settingsCard)
         
         accessibilityStatus = findViewById(R.id.accessibilityStatus)
         overlayStatus = findViewById(R.id.overlayStatus)
-        settingsStatus = findViewById(R.id.settingsStatus)
         
         accessibilityIndicator = findViewById(R.id.accessibilityIndicator)
         overlayIndicator = findViewById(R.id.overlayIndicator)
-        settingsIndicator = findViewById(R.id.settingsIndicator)
         
         serviceStatus = findViewById(R.id.serviceStatus)
         
@@ -134,11 +128,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        settingsCard.setOnClickListener {
-            if (!Settings.System.canWrite(this)) {
-                requestWriteSettingsPermission()
-            }
-        }
         
         setupFlashlightListeners()
     }
@@ -195,14 +184,6 @@ class MainActivity : AppCompatActivity() {
             isOverlayEnabled
         )
 
-        // Write Settings Permission
-        val isWriteSettingsEnabled = Settings.System.canWrite(this)
-        updatePermissionCard(
-            settingsStatus,
-            settingsIndicator,
-            isWriteSettingsEnabled
-        )
-
         // Update service status
         val isServiceRunning = NavButtonAccessibilityService.isRunning
         if (isServiceRunning) {
@@ -246,13 +227,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun requestWriteSettingsPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_WRITE_SETTINGS,
-                Uri.parse("package:$packageName")
-            )
-            startActivity(intent)
-        }
-    }
+    
 }
